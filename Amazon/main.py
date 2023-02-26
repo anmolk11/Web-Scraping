@@ -3,8 +3,19 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import numpy as np
+from urllib.parse import urljoin
 
 header = ({'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'})
+
+data = {
+        "brand" : [], # string
+        "category" : [], # string 
+        "stars" : [], # float
+        "num_of_reviews" : [], # int
+        "disc_price" : [], # float
+        "act_price" : [], # float
+    }
+
 
 def get_brand(card):
     brand = card.find("div",attrs={
@@ -49,14 +60,19 @@ def get_review_count(card):
 
 
 def get_price(card):
-    price = card.find("div",attrs={
-        "class" : "a-section a-spacing-none a-spacing-top-small s-price-instructions-style"
-    }).find_all("span",attrs={
-        "class" : "a-offscreen"
-    })
+    try:
+        price = card.find("div",attrs={
+            "class" : "a-section a-spacing-none a-spacing-top-small s-price-instructions-style"
+        }).find_all("span",attrs={
+            "class" : "a-offscreen"
+        })
+        disc_price = price[0].text
+        act_price = disc_price if len(price) == 1 else price[1].text
+    except:
+        disc_price = -1
+        act_price = -1
     
-    disc_price = price[0].text
-    act_price = disc_price if len(price) == 1 else price[1].text
+    
 
     return (disc_price,act_price)
 
@@ -72,25 +88,29 @@ def saveCSV(name,data):
     df = pd.DataFrame(data)
     df.to_csv(name)
 
-if __name__ == "__main__":
+def getAllLinks(url):
+    links = []
 
-    url = "https://www.amazon.in/s?k=shoes&crid=1I0U9V426YT6J&sprefix=shoe%2Caps%2C405&ref=nb_sb_noss_1"
-    
+    while True:
+        links.append(url)
+        soup = getSoup(url)
+        footer = soup.select_one("div.a-section.a-text-center.s-pagination-container") 
+        next_button = footer.find("a",attrs={
+        "class" : "s-pagination-item s-pagination-next s-pagination-button s-pagination-separator"
+        })
+        if next_button:
+            next_page_url = next_button.get("href")
+            url = urljoin(url,next_page_url)
+        else:
+            break
+
+    return links
+
+def extractData(url):
     soup = getSoup(url)
-
     cards = soup.find_all("div",attrs={
             "class" : "a-section a-spacing-small puis-padding-left-micro puis-padding-right-micro"
         })
-
-    data = {
-        "brand" : [], # string
-        "category" : [], # string 
-        "stars" : [], # float
-        "num_of_reviews" : [], # int
-        "disc_price" : [], # float
-        "act_price" : [], # float
-    }
-
     for card in cards:
         # brand
         brand = get_brand(card)
@@ -116,9 +136,20 @@ if __name__ == "__main__":
         data["disc_price"].append(disc_price)
         data["act_price"].append(act_price)
 
+
+
+if __name__ == "__main__":
+
+    home_url = "https://www.amazon.in/s?k=shoes&crid=1I0U9V426YT6J&sprefix=shoe%2Caps%2C405&ref=nb_sb_noss_1"
     
+    links = getAllLinks(home_url)
+
+    for url in links:
+        extractData(url)
+
     saveCSV("data.csv",data)
 
+       
 
     
 
