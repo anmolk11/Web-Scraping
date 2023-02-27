@@ -41,7 +41,7 @@ def get_stars(card):
         }).text
     except:
         stars = 0.0
-        
+    
     return stars
 
 
@@ -53,6 +53,7 @@ def get_review_count(card):
         }).find("span",attrs={
             "class" : "a-size-base s-underline-text"
         }).text
+        review_count = int(''.join(filter(str.isdigit, review_count)))
     except:
         review_count = 0
 
@@ -68,6 +69,9 @@ def get_price(card):
         })
         disc_price = price[0].text
         act_price = disc_price if len(price) == 1 else price[1].text
+
+        disc_price = float(''.join(filter(str.isdigit, disc_price)))
+        act_price = float(''.join(filter(str.isdigit, act_price)))
     except:
         disc_price = -1
         act_price = -1
@@ -148,11 +152,3 @@ if __name__ == "__main__":
         extractData(url)
 
     saveCSV("data.csv",data)
-
-       
-
-    
-
-    
-        
-
