@@ -151,4 +151,4 @@ if __name__ == "__main__":
     for url in links:
         extractData(url)
 
-    saveCSV("data.csv",data)
+    saveCSV("shoes_data.csv",data)
