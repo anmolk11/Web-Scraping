@@ -1,18 +1,63 @@
 import pandas as pd
-import requests
 from bs4 import BeautifulSoup
+from selenium.webdriver import Chrome 
+from selenium.webdriver import ChromeOptions
+import time
 
-url = "https://www.personality-database.com/profile?pid=1&sort=top"
+data = {
+    "Name" : [],
+    "Category" : [],
+    "MBTI" : [],
+    "Subtype" : [],
+    "Votes" : []
+}
 
-response = requests.get(url)
+url = "https://www.personality-database.com/profile?pid=1"
 
-htmlContent = response.content
+options = ChromeOptions()
+options.headless = True
 
-soup = BeautifulSoup(htmlContent,"lxml")
+driver = Chrome(executable_path='chromedriver.exe', options=options)
+driver.get(url)
 
-print(soup)
+time.sleep(5)
 
-card = soup.find("div",attrs = {
+html = driver.execute_script("return document.documentElement.outerHTML")
+
+soup = BeautifulSoup(html,'lxml')
+
+content = soup.find("div",attrs={
+    "id" : "root"
+})
+
+cards = content.find_all("div",attrs={
     "class" : "profile-card"
 })
-# print(card)
+
+for card in cards:
+    name =  card.find("h2",attrs={
+        "class" : "info-name"
+    }).text
+
+    category = card.find("label").text
+
+    mbti_type = card.find("div",attrs={
+        "class" : "personality"
+    }).text
+    
+    subtype = card.find("div",attrs={
+        "class" : "subtype"
+    }).text
+
+    vote = card.find("div",attrs={
+        "class" : "vote-count"
+    }).find("label").text
+
+    print(f"Name : {name}\nCategort : {1}\nMBTI : {mbti_type}\nSubtype : {subtype}\nVotes : {vote}",end="\n------------------\n")
+    
+    # data["Name"].append(name)
+    # data["Category"].append(category)
+    # data["MBTI"].append(mbti_type)
+    # data["Subtype"].append(subtype)
+    # data["Votes"].append(vote)
+
